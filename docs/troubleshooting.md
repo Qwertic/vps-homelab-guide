@@ -43,6 +43,9 @@ your error message.
 | `CAP_SYS_TIME is not available` warning | Pi-hole's NTP client | harmless; this repo disables it |
 | New password not accepted | password comes from `.env` and is reset at every start | change `PIHOLE_PASSWORD` in `.env`, then `docker compose up -d` |
 | All sites stop loading | the server is down and every device uses Pi-hole | turn off **Override DNS servers** in Tailscale until it's back |
+| No DNS after a server reboot; Unbound `exited`, `Address already in use` | at boot Docker starts containers in parallel and ignores `depends_on`; Pi-hole grabbed Unbound's fixed IP and then forwarded every query to itself | fixed in this repo: both containers have fixed IPs and dynamic ones come from `.4–.7`. Apply with `docker compose down && docker compose up -d`. The boot check (`bin/boot-check`) alerts you if this ever happens again |
+| Monthly maintenance ran, but no ntfy notification arrived | wrong topic in `/etc/homelab/maintenance.env` | check it matches your app, test with `bin/notify test default tada hello`; errors go to `journalctl -u homelab-maintenance` |
+| "Back after reboot" notification doesn't arrive right away | the boot check waits 4 minutes after boot | wait; `systemctl list-timers 'homelab-*'` |
 
 ## Beszel
 | Symptom | Cause | Fix |

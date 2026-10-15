@@ -73,7 +73,7 @@ moving on.
 14. [Optional: private VPN for public Wi-Fi (exit node)](docs/14-exit-node.md)
 15. [Tailscale access policy: who can reach what](docs/15-access-policy.md)
 
-Then: [monthly updates](UPDATING.md) · [troubleshooting](docs/troubleshooting.md) ·
+Then: [automatic monthly updates](UPDATING.md) · [troubleshooting](docs/troubleshooting.md) ·
 [restore runbook](backup/RESTORE.md)
 
 **Before you start, you need:** a Mac or Linux machine with a terminal, an SSH key
@@ -90,6 +90,9 @@ stacks/<service>/               one docker compose project per service, with .en
 backup/                         restic job, database dump hooks, systemd timer, restore runbook
 bin/check-updates               (your computer) pinned versions vs latest releases
 bin/update-stacks               (server) backup, pull, restart
+bin/monthly-maintenance         (server, timer) unattended monthly update + ntfy report
+bin/boot-check, bin/healthcheck (server, timer) alert if anything isn't back after a reboot
+maintenance/install.sh          installs both timers
 docs/                           the guide
 ```
 
@@ -98,7 +101,8 @@ docs/                           the guide
   only. Docker bypasses the ufw firewall, so binding to `0.0.0.0` would quietly expose things.
 - **Secrets never go in git.** Each stack has a `.env.example`; the real `.env` stays on the server.
 - **Backups leave the provider** and are only trusted after a restore drill.
-- **Versions are pinned.** Nothing changes until you update deliberately ([UPDATING.md](UPDATING.md)).
+- **Versions are pinned.** A monthly timer applies patch releases (after a backup) and
+  notifies you about everything else ([UPDATING.md](UPDATING.md)).
 
 ## License
 MIT. Use it, fork it, adapt it. Issues and improvements are welcome.

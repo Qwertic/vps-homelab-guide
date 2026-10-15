@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Print one line per problem and exit 1 if there are any. Used by monthly-maintenance
+# and boot-check.
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+problems=()
+while IFS= read -r line; do
+  [[ -n $line ]] && problems+=("$line")
+done < <(
+  docker ps -a --filter status=exited --filter status=restarting --filter status=created \
+    --format '{{.Names}}: {{.Status}}'
+  docker ps --filter health=unhealthy --format '{{.Names}}: unhealthy'
+)
+
+# A running, "healthy" Pi-hole can still fail every lookup (e.g. Unbound down), and then
+# every device using Tailscale DNS has no internet. So ask it a real question.
+if [[ -f stacks/pihole/.env ]]; then
+  ts_ip=$(sed -n 's/^TS_IP=//p' stacks/pihole/.env)
+  if ! dig +short +time=3 +tries=2 @"$ts_ip" example.org A 2>/dev/null | grep -qE '^[0-9.]+$'; then
+    problems+=("DNS: Pi-hole at $ts_ip can't resolve example.org; devices on Tailscale DNS have no internet")
+  fi
+fi
+
+if (( ${#problems[@]} )); then
+  printf '%s\n' "${problems[@]}"
+  exit 1
+fi

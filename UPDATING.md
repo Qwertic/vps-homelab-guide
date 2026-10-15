@@ -6,11 +6,36 @@
 - **Nothing else.** Container versions are pinned in `stacks/*/compose.yml`, so nothing
   changes until you decide.
 
-Most pins float on patch releases (`authelia:4.39`, `forgejo:16`, `uptime-kuma:2`), so
-a plain pull picks up bug and security fixes. Moving to a new minor or major version
-is always a deliberate edit to the repo.
+Most pins float on patch releases (`authelia:4.39`, `beszel:0.21`, `forgejo:16`), so a
+plain pull picks up bug and security fixes. `uptime-kuma:2` and `caddy:2` also follow
+minor releases; both projects keep those backwards compatible. Exact pins
+(Vaultwarden, Pi-hole, Unbound, Immich) only change when you edit them.
 
-## Monthly routine (~15 minutes)
+## Automatic monthly run
+`homelab-maintenance.timer` runs `bin/monthly-maintenance` on the **first Sunday of each
+month around 04:30** (server time, UTC). It:
+1. runs `git pull`, so repo changes you pushed are picked up
+2. runs `bin/update-stacks`: a fresh backup, then patch updates for the floating tags
+3. checks that nothing is exited, restarting or unhealthy
+4. runs `bin/check-updates` and **notifies you** about new minor/major versions. It
+   **never applies those**: they need you to read the release notes.
+5. reboots if Debian security updates need it. About 4 minutes after **every** boot,
+   `bin/boot-check` runs the same health check (including "does Pi-hole actually
+   answer?") and alerts you if anything didn't come back
+
+Every run ends with an ntfy notification: **OK**, **needs a decision** (with the list),
+or **FAILED** / **containers down** (with what to do). Immich is pinned to an exact
+version, so it only ever changes when you bump it.
+
+Install it once on the server:
+```sh
+cd ~/home-lab && sudo NTFY_URL=https://ntfy.sh/<your-topic> bash maintenance/install.sh
+```
+Run it now, to test: `sudo systemctl start homelab-maintenance && journalctl -u homelab-maintenance -f`
+
+When a "needs a decision" notification arrives, follow the manual routine below.
+
+## Manual routine (for new minor/major versions, ~15 minutes)
 
 ### 1. Mac: see what's new
 ```sh
@@ -24,8 +49,8 @@ cd ~/code/home-lab && bin/check-updates
 
 ### 2. Mac: bump what you decided to update
 Edit the tag in the stack's `compose.yml`, e.g. `authelia/authelia:4.39` → `4.40`.
-For Immich, the version is `IMMICH_VERSION` in the **server's** `stacks/immich/.env`
-(and `.env.example` in the repo). Then commit and push:
+For Immich, the version is an exact pin, `IMMICH_VERSION=v3.3.3`, in the **server's**
+`stacks/immich/.env` (and in `.env.example` in the repo). Then commit and push:
 ```sh
 git commit -am "Update authelia to 4.40" && git push
 ```

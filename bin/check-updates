@@ -71,7 +71,9 @@ def pins():
                 continue  # handled once below
             name, _, tag = ref.rpartition(":")
             yield f.parent.name, name, tag.replace("-builder", "")
-    env = (ROOT / "stacks/immich/.env.example").read_text()
+    # On the server the real pin is in .env; in the repo only .env.example exists.
+    env_file = ROOT / "stacks/immich/.env"
+    env = (env_file if env_file.exists() else ROOT / "stacks/immich/.env.example").read_text()
     yield "immich", "immich", re.search(r"^IMMICH_VERSION=(\S+)", env, re.M).group(1)
 
 

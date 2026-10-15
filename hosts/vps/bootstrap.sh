@@ -17,7 +17,7 @@ export DEBIAN_FRONTEND=noninteractive
 echo "==> Packages"
 apt-get update
 apt-get -y upgrade
-apt-get -y install ca-certificates curl gnupg ufw unattended-upgrades git
+apt-get -y install ca-certificates curl gnupg ufw unattended-upgrades git bind9-dnsutils
 
 echo "==> Admin user"
 if ! id "$ADMIN_USER" >/dev/null 2>&1; then

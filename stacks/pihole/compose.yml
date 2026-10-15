@@ -19,10 +19,14 @@ services:
       FTLCONF_ntp_sync_active: "false"
     volumes:
       - /srv/state/pihole:/etc/pihole
-    depends_on: [unbound]
+    depends_on: [unbound]   # honoured by `compose up`, NOT when Docker restarts containers at boot
     networks:
       proxy: {}
-      dns: {}
+      dns:
+        # Fixed too: at boot Docker starts both containers in parallel, and a dynamic
+        # address could take 10.53.0.2 first. Unbound then fails to start and Pi-hole
+        # forwards every query to itself (all DNS fails).
+        ipv4_address: 10.53.0.3
 
   unbound:
     image: klutchell/unbound:v1.26.1
@@ -40,3 +44,5 @@ networks:
     ipam:
       config:
         - subnet: 10.53.0.0/29
+          # Dynamic addresses come only from .4-.7, never the fixed .2/.3 above.
+          ip_range: 10.53.0.4/30

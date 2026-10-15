@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Unattended monthly maintenance. Run by homelab-maintenance.timer (first Sunday, ~04:30);
+# install with `sudo bash maintenance/install.sh`. Steps:
+#   1. git pull (fast-forward only)
+#   2. bin/update-stacks: fresh backup, then patch-level image updates
+#   3. health check: nothing exited, restarting or unhealthy
+#   4. bin/check-updates: report new minor/major versions (never applied automatically)
+#   5. reboot if Debian asked for one
+# Every outcome is pushed to ntfy (bin/notify). After a reboot, bin/boot-check reports
+# whether everything came back.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+notify() { bin/notify "$@"; }
+
+step="start"
+trap 'notify "Homelab maintenance FAILED" high warning "Failed during: $step. Details: journalctl -u homelab-maintenance"' ERR
+
+step="git pull"
+git pull --ff-only -q
+
+step="backup + update stacks"
+bin/update-stacks
+
+step="health check"
+sleep 120   # give healthchecks (Immich takes ~1-2 min) time to settle
+if ! bad=$(bin/healthcheck); then
+  notify "Homelab maintenance: problems after update" high warning \
+    "$bad
+Roll back per UPDATING.md; the pre-update backup is the newest restic snapshot."
+  exit 1
+fi
+running=$(docker ps -q | wc -l)
+
+step="check for new versions"
+report=$(bin/check-updates 2>&1 || true)
+pending=$(grep -E "UPDATE AVAILABLE|uses images we don't|lookup failed|check failed|^  " <<<"$report" || true)
+
+if [[ -n "$pending" ]]; then
+  notify "Homelab: updated, new versions need you" default package \
+    "Patches applied, $running containers healthy. Needs a decision (see UPDATING.md):
+$pending"
+else
+  notify "Homelab maintenance OK" low white_check_mark \
+    "Patches applied, $running containers healthy. Everything is on the latest version."
+fi
+
+step="reboot"
+if [[ -f /var/run/reboot-required ]]; then
+  notify "Homelab rebooting" low arrows_counterclockwise "Debian updates need a reboot. A check runs ~4 min after boot."
+  touch /var/tmp/homelab-maintenance-reboot   # tells boot-check to report success too
+  sudo systemctl reboot
+fi

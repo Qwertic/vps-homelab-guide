@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Push a notification to ntfy:  bin/notify <title> <priority> <tags> <message>
+# NTFY_URL comes from /etc/homelab/maintenance.env. Failures are logged (to the journal
+# when run by systemd) but never fatal, so a notification problem can't break maintenance.
+# shellcheck disable=SC1091
+source /etc/homelab/maintenance.env
+if ! out=$(curl -fsS -m 15 -H "Title: $1" -H "Priority: $2" -H "Tags: $3" -d "$4" "$NTFY_URL" 2>&1); then
+  echo "ntfy notification failed ($NTFY_URL): $out" >&2
+fi

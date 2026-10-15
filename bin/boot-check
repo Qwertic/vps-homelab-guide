@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Runs ~4 minutes after every boot (homelab-boot-check.timer) and alerts if anything
+# didn't come back. Also reports success after a maintenance reboot.
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+marker=/var/tmp/homelab-maintenance-reboot
+
+if bad=$(bin/healthcheck); then
+  [[ -f $marker ]] && bin/notify "Homelab back after maintenance reboot" low white_check_mark \
+    "All containers healthy and DNS answering."
+else
+  bin/notify "Homelab: problems after reboot" high warning \
+    "$bad
+Fix per docs/troubleshooting.md. Meanwhile, turn off Override DNS servers in Tailscale if devices have no internet."
+fi
+rm -f "$marker"
