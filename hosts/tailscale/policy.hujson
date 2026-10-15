@@ -1,0 +1,34 @@
+// Tailscale access policy for the lab. Kept in git so changes are reviewed like code.
+// Apply: Tailscale admin → Access controls → JSON editor → paste → Save.
+// Replace YOUR-LOGIN@example.com (your Tailscale login) first: the tests below must
+// pass or the console refuses to save, which guards against locking yourself out.
+{
+	"tagOwners": {
+		"tag:homelab": ["autogroup:admin"],
+	},
+
+	"grants": [
+		// Your own devices can reach each other.
+		{"src": ["autogroup:member"], "dst": ["autogroup:self"], "ip": ["*"]},
+
+		// You (tailnet admin) can reach everything on the server: SSH, HTTPS, DNS, git SSH.
+		{"src": ["autogroup:admin"], "dst": ["tag:homelab"], "ip": ["*"]},
+
+		// Using the server as an exit node.
+		{"src": ["autogroup:member"], "dst": ["autogroup:internet"], "ip": ["*"]},
+
+		// People you share the server with (e.g. family using Immich): HTTPS only.
+		// No SSH, no DNS, no Forgejo SSH.
+		{"src": ["autogroup:shared"], "dst": ["tag:homelab"], "ip": ["tcp:443"]},
+
+		// Deliberately absent: anything with the server as src. If the server were ever
+		// compromised, it couldn't open connections to your laptop or phone.
+	],
+
+	"tests": [
+		{
+			"src":    "YOUR-LOGIN@example.com",
+			"accept": ["tag:homelab:22", "tag:homelab:443", "tag:homelab:53", "tag:homelab:2222"],
+		},
+	],
+}

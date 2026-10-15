@@ -71,6 +71,7 @@ moving on.
 12. [Server dashboard: Beszel](docs/12-beszel.md)
 13. [Optional: Jellyfin](docs/13-jellyfin.md)
 14. [Optional: private VPN for public Wi-Fi (exit node)](docs/14-exit-node.md)
+15. [Tailscale access policy: who can reach what](docs/15-access-policy.md)
 
 Then: [monthly updates](UPDATING.md) · [troubleshooting](docs/troubleshooting.md) ·
 [restore runbook](backup/RESTORE.md)
@@ -84,6 +85,7 @@ All have free tiers except Hetzner. Plan for an evening for steps 1–6 and anot
 hosts/vps/bootstrap.sh          one-time server setup: user, SSH, Docker, Tailscale, firewall
 hosts/vps/mount-storagebox.sh   mounts the Storage Box at /srv/data
 hosts/vps/exit-node.sh          optional: make the server a Tailscale exit node
+hosts/tailscale/policy.hujson   Tailscale access policy (paste into the admin console)
 stacks/<service>/               one docker compose project per service, with .env.example
 backup/                         restic job, database dump hooks, systemd timer, restore runbook
 bin/check-updates               (your computer) pinned versions vs latest releases

@@ -66,7 +66,8 @@ and approve the machine. ✅ It ends with `Tailscale IP: 100.x.y.z`. Note that I
 
 ## 1.5 Tailscale admin console
 - Machines → the server → **⋯ → Disable key expiry**. **Don't skip this.** Otherwise the
-  server drops off your tailnet after ~180 days and you're locked out.
+  server drops off your tailnet after ~180 days and you're locked out. (After
+  [step 15](15-access-policy.md) tags the server, it never expires anyway.)
 - Optional: **Edit machine name** → `homelab`, so `ssh homelab` works.
 
 ## 1.6 Check before closing anything
