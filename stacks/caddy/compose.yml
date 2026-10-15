@@ -1,0 +1,21 @@
+services:
+  caddy:
+    build: .
+    restart: unless-stopped
+    ports:
+      # Tailscale IP only: never reachable from the public internet.
+      - "${TS_IP}:443:443"
+      - "${TS_IP}:443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /srv/state/caddy/data:/data
+      - /srv/state/caddy/config:/config
+    networks: [proxy]
+
+networks:
+  proxy:
+    external: true

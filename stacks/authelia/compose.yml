@@ -1,0 +1,19 @@
+services:
+  authelia:
+    image: authelia/authelia:4.39
+    restart: unless-stopped
+    environment:
+      X_AUTHELIA_CONFIG_FILTERS: template
+      DOMAIN: ${DOMAIN}
+      AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE: /secrets/jwt_secret
+      AUTHELIA_SESSION_SECRET_FILE: /secrets/session_secret
+      AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: /secrets/storage_encryption_key
+    volumes:
+      - ./configuration.yml:/config/configuration.yml:ro
+      - /srv/state/authelia/secrets:/secrets:ro
+      - /srv/state/authelia/data:/data
+    networks: [proxy]
+
+networks:
+  proxy:
+    external: true

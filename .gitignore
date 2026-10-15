@@ -1,0 +1,8 @@
+.env
+*.env
+!*.env.example
+users.yml
+secrets/
+.remember/
+supertool
+__pycache__/

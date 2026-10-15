@@ -1,0 +1,33 @@
+services:
+  beszel:
+    image: henrygd/beszel:0.21
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:8090"   # for the agent below; browsers go through Caddy
+    environment:
+      APP_URL: https://stats.${DOMAIN}
+    volumes:
+      - /srv/state/beszel/data:/beszel_data
+      - /srv/state/beszel/socket:/beszel_socket
+    networks: [proxy]
+
+  beszel-agent:
+    image: henrygd/beszel-agent:0.21
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /srv/state/beszel/socket:/beszel_socket
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Storage Box usage (no I/O stats for network mounts). Mounting an empty
+      # subfolder, as Beszel's docs recommend, keeps the photos out of the container.
+      - /srv/data/.beszel:/extra-filesystems/storagebox__Storage-Box:ro
+    environment:
+      LISTEN: /beszel_socket/beszel.sock
+      HUB_URL: http://localhost:8090
+      # Both come from the hub UI: "Add system" → copy key and token.
+      KEY: ${BESZEL_KEY}
+      TOKEN: ${BESZEL_TOKEN}
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Pull new images and restart stacks. Run on the server, after `git pull`.
+# Takes a fresh restic backup first, so an update that breaks a database can be
+# rolled back to minutes ago instead of last night.
+#
+#   bin/update-stacks              every deployed stack
+#   bin/update-stacks immich       only the named stack(s)
+#   SKIP_BACKUP=1 bin/update-stacks ...
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+stacks=("$@")
+if [[ ${#stacks[@]} -eq 0 ]]; then
+  # "Deployed" = has containers. Stacks never started (e.g. Jellyfin) are skipped.
+  for d in stacks/*/; do
+    if [[ -n "$(cd "$d" && docker compose ps -aq 2>/dev/null)" ]]; then
+      stacks+=("$(basename "$d")")
+    fi
+  done
+fi
+echo "Stacks: ${stacks[*]}"
+
+if [[ -z "${SKIP_BACKUP:-}" ]]; then
+  echo "==> Backup before updating"
+  sudo systemctl start restic-backup.service
+fi
+
+for s in "${stacks[@]}"; do
+  echo "==> $s"
+  (
+    cd "stacks/$s"
+    if [[ -f Dockerfile ]]; then
+      docker compose build --pull -q
+    fi
+    docker compose pull -q --ignore-buildable
+    docker compose up -d --remove-orphans
+  )
+done
+
+echo "==> Removing old images"
+docker image prune -f >/dev/null
+
+docker ps --format '{{.Names}}: {{.Status}}' | sort
+if [[ -f /var/run/reboot-required ]]; then
+  echo
+  echo "Debian installed updates that need a reboot: sudo reboot"
+fi

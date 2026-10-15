@@ -1,0 +1,54 @@
+# Rendered with the `template` filter: {{ env "DOMAIN" }} comes from compose.
+# Secrets are injected via *_FILE env vars. Never put them in this file.
+theme: auto
+
+server:
+  address: tcp://:9091
+  endpoints:
+    authz:
+      forward-auth:
+        implementation: ForwardAuth
+        # Cookie sessions only. The default also tries the Authorization header as
+        # Basic auth, which breaks apps that send their own token in that header
+        # (e.g. Beszel/PocketBase): Authelia rejects it and the browser pops a
+        # "Sign in" dialog.
+        authn_strategies:
+          - name: CookieSession
+
+log:
+  level: info
+
+totp:
+  issuer: '{{ env "DOMAIN" }}'
+
+authentication_backend:
+  file:
+    path: /data/users.yml
+    # Phone keyboards capitalise the first letter; also allow logging in with email.
+    # Requires usernames in users.yml to be lowercase.
+    search:
+      email: true
+      case_insensitive: true
+    password:
+      algorithm: argon2
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain: '*.{{ env "DOMAIN" }}'
+      policy: two_factor
+
+session:
+  cookies:
+    - domain: '{{ env "DOMAIN" }}'
+      authelia_url: 'https://auth.{{ env "DOMAIN" }}'
+
+storage:
+  local:
+    path: /data/db.sqlite3
+
+# Password-reset and 2FA-enrollment links land in this file until SMTP is set up:
+#   cat /srv/state/authelia/data/notification.txt
+notifier:
+  filesystem:
+    filename: /data/notification.txt

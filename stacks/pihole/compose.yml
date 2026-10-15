@@ -1,0 +1,22 @@
+services:
+  pihole:
+    image: pihole/pihole:2026.09.0
+    restart: unless-stopped
+    ports:
+      # DNS for your tailnet only. A public port 53 is an open resolver that gets abused.
+      - "${TS_IP}:53:53/tcp"
+      - "${TS_IP}:53:53/udp"
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
+      FTLCONF_dns_listeningMode: all
+      FTLCONF_dns_upstreams: "9.9.9.9;149.112.112.112"
+      # The host already keeps time; skip Pi-hole's NTP sync (it lacks CAP_SYS_TIME anyway).
+      FTLCONF_ntp_sync_active: "false"
+    volumes:
+      - /srv/state/pihole:/etc/pihole
+    networks: [proxy]
+
+networks:
+  proxy:
+    external: true

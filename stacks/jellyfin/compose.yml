@@ -1,0 +1,16 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:12.2
+    restart: unless-stopped
+    user: 1000:1000
+    environment:
+      JELLYFIN_PublishedServerUrl: https://media.${DOMAIN}
+    volumes:
+      - /srv/state/jellyfin/config:/config
+      - /srv/state/jellyfin/cache:/cache
+      - /srv/data/media:/media:ro
+    networks: [proxy]
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,6 @@
+# Live database directories: back these up through pre.d dump hooks instead.
+/srv/state/*/postgres
+# Regenerable caches
+/srv/state/jellyfin/cache
+/srv/state/immich/thumbs
+/home/*/.cache

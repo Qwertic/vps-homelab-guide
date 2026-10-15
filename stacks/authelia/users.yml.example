@@ -1,0 +1,9 @@
+# Copy to /srv/state/authelia/data/users.yml (NOT into the repo).
+# Hash a password:
+#   docker run --rm authelia/authelia:4.39 authelia crypto hash generate argon2 --password 'changeme'
+users:
+  me:
+    displayname: Me
+    email: me@example.com
+    password: '$argon2id$v=19$m=65536,t=3,p=4$REPLACE_WITH_HASH'
+    groups: [admins]
