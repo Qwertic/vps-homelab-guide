@@ -10,13 +10,33 @@ services:
       TZ: ${TZ:-Etc/UTC}
       FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
       FTLCONF_dns_listeningMode: all
-      FTLCONF_dns_upstreams: "9.9.9.9;149.112.112.112"
+      # Unbound below resolves from the root servers itself, so no single upstream
+      # company sees every lookup. It also does the DNSSEC validation.
+      FTLCONF_dns_upstreams: "10.53.0.2#53"
+      # Lab names (*.DOMAIN) answer locally, even when Cloudflare's DNS is down.
+      FTLCONF_misc_dnsmasq_lines: "address=/${DOMAIN}/${TS_IP}"
       # The host already keeps time; skip Pi-hole's NTP sync (it lacks CAP_SYS_TIME anyway).
       FTLCONF_ntp_sync_active: "false"
     volumes:
       - /srv/state/pihole:/etc/pihole
-    networks: [proxy]
+    depends_on: [unbound]
+    networks:
+      proxy: {}
+      dns: {}
+
+  unbound:
+    image: klutchell/unbound:v1.26.1
+    restart: unless-stopped
+    networks:
+      dns:
+        # Fixed address because Pi-hole's upstream has to be an IP. 10.53.0.0/29 sits
+        # outside Docker's default address pools, so it can't collide with other stacks.
+        ipv4_address: 10.53.0.2
 
 networks:
   proxy:
     external: true
+  dns:
+    ipam:
+      config:
+        - subnet: 10.53.0.0/29

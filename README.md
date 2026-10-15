@@ -14,7 +14,8 @@ is in [Troubleshooting](docs/troubleshooting.md).
 | 🔐 | **Authelia** | One login with 2FA in front of every admin page |
 | 🔑 | **Vaultwarden** | Password manager (works with the official Bitwarden apps) |
 | 📸 | **Immich** | Photo backup from your phone, Google Photos-style |
-| 🚫 | **Pi-hole** | Ad and tracker blocking on all your devices, even on mobile data |
+| 🚫 | **Pi-hole + Unbound** | Ad and tracker blocking on all your devices, with your own DNS resolver |
+| 🌍 | **Exit node** *(optional)* | Your own VPN for public Wi-Fi |
 | 🌱 | **Forgejo** | Your own git server (this repo can live there) |
 | 📈 | **Uptime Kuma + Beszel** | Uptime and resource monitoring, alerts to your phone |
 | 🎬 | **Jellyfin** *(optional)* | Media server for movies, shows, music |
@@ -31,10 +32,10 @@ is in [Troubleshooting](docs/troubleshooting.md).
  │   ├─ status. → Uptime Kuma  ┐      ├─ vault.  → Vaultwarden  │
  │   ├─ stats.  → Beszel       ├ SSO  ├─ git.    → Forgejo      │
  │   └─ dns.    → Pi-hole UI   ┘      └─ media.  → Jellyfin     │
- │  Pi-hole :53 = DNS for every device on your tailnet          │
+ │  Pi-hole :53 → Unbound: DNS for all your tailnet devices     │
  │  /srv/state  app data + databases, on the local SSD          │
- │  /srv/data   photos + media, on a 1 TB Storage Box (SMB)    │
- └────────────────────────────┬──────────────────────────────────┘
+ │  /srv/data   photos + media, on a 1 TB Storage Box (SMB)     │
+ └────────────────────────────┬─────────────────────────────────┘
                               │ nightly restic (encrypted)
                               ▼
                        Backblaze B2, at a different company
@@ -69,6 +70,7 @@ moving on.
 11. [Photos: Immich](docs/11-immich.md)
 12. [Server dashboard: Beszel](docs/12-beszel.md)
 13. [Optional: Jellyfin](docs/13-jellyfin.md)
+14. [Optional: private VPN for public Wi-Fi (exit node)](docs/14-exit-node.md)
 
 Then: [monthly updates](UPDATING.md) · [troubleshooting](docs/troubleshooting.md) ·
 [restore runbook](backup/RESTORE.md)
@@ -81,6 +83,7 @@ All have free tiers except Hetzner. Plan for an evening for steps 1–6 and anot
 ```
 hosts/vps/bootstrap.sh          one-time server setup: user, SSH, Docker, Tailscale, firewall
 hosts/vps/mount-storagebox.sh   mounts the Storage Box at /srv/data
+hosts/vps/exit-node.sh          optional: make the server a Tailscale exit node
 stacks/<service>/               one docker compose project per service, with .env.example
 backup/                         restic job, database dump hooks, systemd timer, restore runbook
 bin/check-updates               (your computer) pinned versions vs latest releases

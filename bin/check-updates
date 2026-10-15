@@ -26,6 +26,7 @@ UPSTREAM = {
     "louislam/uptime-kuma": ("github", "louislam/uptime-kuma"),
     "caddy": ("github", "caddyserver/caddy"),
     "immich": ("github", "immich-app/immich"),
+    "klutchell/unbound": ("dockerhub", "klutchell/unbound"),
 }
 
 
@@ -35,16 +36,26 @@ def fetch(url):
         return r.read().decode()
 
 
+def semver_key(tag):
+    return [int(x) for x in re.findall(r"\d+", tag)]
+
+
 def latest(kind, repo):
+    if kind == "dockerhub":
+        # No GitHub releases that match the image tags; read the registry's vX.Y.Z tags.
+        data = json.loads(fetch(f"https://hub.docker.com/v2/repositories/{repo}/tags?page_size=100&name=v"))
+        return max((t["name"] for t in data["results"] if re.fullmatch(r"v\d+\.\d+\.\d+", t["name"])), key=semver_key)
     if kind == "github":
         return json.loads(fetch(f"https://api.github.com/repos/{repo}/releases/latest"))["tag_name"]
     # Codeberg lists newest first, including older maintenance lines; take the highest.
     tags = [r["tag_name"] for r in json.loads(fetch(f"https://codeberg.org/api/v1/repos/{repo}/releases?limit=20"))
             if not r.get("prerelease")]
-    return max(tags, key=lambda t: [int(x) for x in re.findall(r"\d+", t)])
+    return max(tags, key=semver_key)
 
 
 def release_url(kind, repo, tag):
+    if kind == "dockerhub":
+        return f"https://hub.docker.com/r/{repo}/tags"
     host = "github.com" if kind == "github" else "codeberg.org"
     return f"https://{host}/{repo}/releases/tag/{tag}"
 
