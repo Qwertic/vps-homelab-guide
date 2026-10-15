@@ -51,8 +51,16 @@ sed -i 's/#53"$/#53;9.9.9.9"/' compose.yml && docker compose up -d
 - **Changing the password:** edit `PIHOLE_PASSWORD` in `.env`, then `docker compose up -d`.
   Pi-hole re-reads it at every start, so `pihole setpassword` would be overwritten. Avoid `$`
   in the value, because Compose treats it as a variable.
-- **Better blocklists:** Lists → add [HaGeZi Multi PRO](https://github.com/hagezi/dns-blocklists)
-  → Tools → Update Gravity.
+- **Better blocklists:** Lists → Address →
+  `https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.txt`
+  ([HaGeZi Multi PRO](https://github.com/hagezi/dns-blocklists)) → **Add blocklist** →
+  Tools → **Update Gravity**. Use the list file's address, not the project page: the page
+  "loads" ~2,000 junk entries instead of ~200,000 domains. Check with:
+  ```sh
+  docker compose exec pihole pihole-FTL sqlite3 /etc/pihole/gravity.db "select enabled, number, address from adlist"
+  ```
+- **YouTube ads can't be blocked by DNS:** they come from the same servers as the videos.
+  Use an ad blocker in the browser or app on each device instead.
 
 **Optional:** [use the server as a VPN on public Wi-Fi](14-exit-node.md)
 
