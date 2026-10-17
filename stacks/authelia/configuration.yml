@@ -4,6 +4,12 @@ theme: auto
 
 server:
   address: tcp://:9091
+  # Default 4 KiB. Caddy forwards the full request URL to Authelia in a header, and
+  # some admin pages (Pi-hole's query log) use very long URLs: with the default, those
+  # requests fail with "431 Request Header Fields Too Large".
+  buffers:
+    read: 16384
+    write: 16384
   endpoints:
     authz:
       forward-auth:

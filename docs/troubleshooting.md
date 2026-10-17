@@ -22,6 +22,7 @@ your error message.
 | `user not found` for `Name` | usernames were case-sensitive | this repo enables case-insensitive and email login |
 | Browser "Sign in" popup on an app behind Authelia (Beszel) | the default forward-auth tried the app's `Authorization` header as Basic auth | this repo restricts forward-auth to `CookieSession` |
 | `chown: /config/configuration.yml: Read-only file system` | the config is mounted read-only on purpose | harmless |
+| `431 Request Header Fields Too Large` on a page behind Authelia (Pi-hole's Queries page) | Caddy forwards the full URL to Authelia in a header; long URLs overflow Authelia's default 4 KiB buffer | this repo sets `server.buffers.read/write: 16384` |
 
 ## Uptime Kuma
 | Symptom | Cause | Fix |
